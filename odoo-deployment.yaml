@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odoo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: odoo
+  template:
+    metadata:
+      labels:
+        app: odoo
+    spec:
+      containers:
+        - name: odoo
+          image: gcr.io/your-project-id/odoo:latest
+          ports:
+            - containerPort: 8069
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+          command: ["./odoo-bin"]
+          args:
+            - "--db_host=postgres"
+            - "--db_user=$(DB_USER)"
+            - "--db_password=$(DB_PASSWORD)"
+          volumeMounts:
+            - name: odoo-persistent-storage
+              mountPath: /var/lib/odoo
+      volumes:
+        - name: odoo-persistent-storage
+          persistentVolumeClaim:
+            claimName: odoo-pv-claim
